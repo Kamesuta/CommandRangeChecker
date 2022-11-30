@@ -1,0 +1,20 @@
+# 最大直線距離
+max_distance: 100
+# 矩形範囲の最大の一辺の長さ
+max_length: 100
+# 距離制限を強制するか
+force_range_limit: false
+
+# 除外するプレイヤー
+bypass:
+  - TestPlayer
+
+# 言語設定
+lang:
+  prefix: "§d[@e誤爆防止プラグイン]§r "
+  block_execute: "検出したためコマンドの実行をブロックしました"
+  block_set_command: "検出したためコマンドブロックの設定をブロックしました"
+  block_nothing: "検出しました"
+  no_range: "§e危険な§c@e§eの使用を%1$s。 事故を防ぐため§c@e§eを使う際は§6必ず最大範囲を指定§eしてください。 §b(例: @e[distance=..10]、@e[dx=10,dy=10,dz=10]など) §eこの検出はOPへ報告されます。"
+  large_distance: "§e危険な§c@e§eの使用を%1$s。 事故を防ぐため§c@e§eを使う際は§6半径を%2$fブロック以内§eにしてください。 §b(例: @e[distance=..%2$f]) §eこの検出はOPへ報告されます。"
+  large_length: "§e危険な§c@e§eの使用を%1$s。 事故を防ぐため§c@e§eを使う際は§6範囲を%2$fブロック以内§eにしてください。 §b(例: @e[dx=%2$f,dy=%2$f,dz=%2$f]) §eこの検出はOPへ報告されます。"

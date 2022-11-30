@@ -1,0 +1,150 @@
+package net.kunmc.commandrangechecker
+
+import com.comphenix.protocol.PacketType
+import com.comphenix.protocol.events.ListenerPriority
+import com.comphenix.protocol.events.PacketAdapter
+import com.comphenix.protocol.events.PacketEvent
+import com.mojang.brigadier.CommandDispatcher
+import com.mojang.brigadier.context.CommandContextBuilder
+import io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent
+import net.minecraft.server.v1_16_R3.CommandListenerWrapper
+import net.minecraft.server.v1_16_R3.EntitySelector
+import net.minecraft.server.v1_16_R3.MinecraftServer
+import org.bukkit.command.CommandSender
+import org.bukkit.craftbukkit.v1_16_R3.command.VanillaCommandWrapper
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerCommandPreprocessEvent
+import org.bukkit.event.server.ServerCommandEvent
+
+/**
+ * コマンド実行をフックして、範囲なし@eを検知するリスナー
+ */
+class CommandListener : Listener {
+    /** バニラのコマンドパーサーを取得 */
+    private val dispatcher: CommandDispatcher<CommandListenerWrapper> =
+        MinecraftServer.getServer().commandDispatcher.a()
+
+    init {
+        // ブロック変更時
+        CommandRangeChecker.instance.protocolManager.addPacketListener(object : PacketAdapter(
+            CommandRangeChecker.instance,
+            ListenerPriority.NORMAL,
+            PacketType.Play.Client.SET_COMMAND_BLOCK,
+        ) {
+            /** 受信 (クライアント→サーバー) */
+            override fun onPacketReceiving(event: PacketEvent) {
+                val packet = event.packet
+                // 入力したコマンドを取得
+                val command = packet.strings.read(0)
+                // チェック
+                if (onCommand(event.player, command, isCommandBlockSet = true)) {
+                    event.isCancelled = true
+                }
+            }
+        })
+    }
+
+    /**
+     * コマンド実行時のチェック
+     * @param sender コマンド実行者
+     * @param command コマンド
+     * @param isCommandBlockSet trueの場合はコマンドブロックの設定時
+     * @return trueの場合コマンドをキャンセルする
+     */
+    private fun onCommand(sender: CommandSender, command: String, isCommandBlockSet: Boolean = false): Boolean {
+        // 除外リスト
+        if (Config.bypass.contains(sender.name)) {
+            return false
+        }
+
+        // 先頭の/を削除
+        val commandBody = command.removePrefix("/")
+
+        // コマンドラッパーを取得
+        val commandWrapper = VanillaCommandWrapper.getListener(sender)
+        // コマンドをパース
+        val parse = dispatcher.parse(commandBody, commandWrapper)
+
+        // すべてのコマンドノードを取得
+        val selectors = sequence<CommandContextBuilder<*>> {
+            var current = parse.context
+            while (current != null) {
+                yield(current)
+                current = current.child
+            }
+        }.flatMap { it.arguments.values }.mapNotNull {
+            val result = it.result as? EntitySelector ?: return@mapNotNull null
+            ParsedEntitySelector(result, it.range.get(commandBody))
+        }.toList()
+
+        // ログの可変部分
+        val actionNameMessage = if (isCommandBlockSet) Config.blockSetCommand else Config.blockExecute
+        val actionNameLog = if (isCommandBlockSet) "コマンドブロックに設定しようと" else "使用"
+
+        // 範囲指定がないセレクターを検出
+        val noRangeSelector = selectors.find { !it.worldLimited || (it.maxDistance == null && it.maxLength == null) }
+        if (noRangeSelector != null) {
+            // 範囲指定がない場合
+            sender.sendMessage(Config.prefix + String.format(Config.noRange, actionNameMessage))
+            CommandRangeChecker.instance.logger.warning("${sender.name} が範囲指定なしの@eを${actionNameLog}しました: ${noRangeSelector.selectorCommand} (場所: ${commandWrapper.position}, コマンド拒否: true)")
+            return true
+        }
+
+        // 距離範囲指定が大きすぎるセレクターを検出
+        val largeDistanceSelector =
+            selectors.find { selector -> selector.maxDistance?.let { it > Config.maxDistance } ?: false }
+        if (largeDistanceSelector != null) {
+            sender.sendMessage(
+                String.format(
+                    Config.prefix + Config.largeDistance,
+                    if (Config.forceRangeLimit) actionNameMessage else Config.blockNothing,
+                    Config.maxDistance
+                )
+            )
+            CommandRangeChecker.instance.logger.warning("${sender.name} が距離範囲指定が${Config.maxDistance}ブロックを超える@eを${actionNameLog}しました: ${largeDistanceSelector.selectorCommand} (場所: ${commandWrapper.position}, コマンド拒否: ${Config.forceRangeLimit})")
+            return Config.forceRangeLimit
+        }
+
+        // 矩形範囲指定が大きすぎるセレクターを検出
+        val largeLengthSelector =
+            selectors.find { selector -> selector.maxLength?.let { it > Config.maxLength } ?: false }
+        if (largeLengthSelector != null) {
+            sender.sendMessage(
+                String.format(
+                    Config.prefix + Config.largeLength,
+                    if (Config.forceRangeLimit) actionNameMessage else Config.blockNothing,
+                    Config.maxLength
+                )
+            )
+            CommandRangeChecker.instance.logger.warning("${sender.name} が矩形範囲指定が${Config.maxLength}ブロックを超える@eを${actionNameLog}しました: ${largeLengthSelector.selectorCommand} (場所: ${commandWrapper.position}, コマンド拒否: ${Config.forceRangeLimit})")
+            return Config.forceRangeLimit
+        }
+
+        return false
+    }
+
+    @EventHandler
+    fun onCommand(event: ServerCommandEvent) {
+        // チェック
+        if (onCommand(event.sender, event.command)) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onPlayerCommand(event: PlayerCommandPreprocessEvent) {
+        // チェック
+        if (onCommand(event.player, event.message)) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onPlayerSignCommand(event: PlayerSignCommandPreprocessEvent) {
+        // チェック
+        if (onCommand(event.player, event.message)) {
+            event.isCancelled = true
+        }
+    }
+}

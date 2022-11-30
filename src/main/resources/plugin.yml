@@ -3,3 +3,6 @@ version: '${version}'
 main: net.kunmc.commandrangechecker.CommandRangeChecker
 api-version: 1.16
 authors: [ Kamesuta ]
+
+depend:
+  - ProtocolLib
