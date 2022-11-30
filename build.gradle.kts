@@ -13,7 +13,7 @@ plugins {
 }
 
 // グループ定義
-group = "com.kamesuta"
+group = "net.kunmc"
 // バージョン定義
 version = run {
     // Gitに応じた自動バージョニングを行うための設定
@@ -59,8 +59,16 @@ tasks {
         archiveClassifier.set("original")
     }
 
+    // 依存関係をcom.yourgroup.lib以下に埋め込むためにリロケートする
+    val relocateShadow by registering(com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation::class) {
+        target = shadowJar.get()
+        prefix = "${project.group}.${project.name.toLowerCase()}.lib"
+    }
+
     // fatJarを生成する
     shadowJar {
+        // リロケートする
+        dependsOn(relocateShadow)
         // 依存関係を埋め込んだjarは末尾なし
         archiveClassifier.set("")
     }
