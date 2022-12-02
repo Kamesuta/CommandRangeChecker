@@ -17,6 +17,8 @@ object Reflection {
         // NMS関数/フィールド
         val entitySelectorRange: Field = EntitySelector::class.java.getDeclaredField("e").apply { isAccessible = true }
         val entitySelectorAABB: Field = EntitySelector::class.java.getDeclaredField("g").apply { isAccessible = true }
+        val entitySelectorUsesSelector: Field =
+            EntitySelector::class.java.getDeclaredField("checkPermissions").apply { isAccessible = true }
     }
 
     /**
@@ -59,6 +61,20 @@ object Reflection {
                 Accessor.entitySelectorAABB[this] as AxisAlignedBB?
             }.onFailure {
                 CommandRangeChecker.instance.logger.warning("EntitySelector.aabbの取得に失敗")
+            }.getOrNull()
+        }
+
+    /**
+     * EntitySelectorのusesSelectorを取得します
+     * @receiver EntitySelector
+     * @return usesSelector
+     */
+    val EntitySelector.usesSelector: Boolean?
+        get() {
+            return runCatching {
+                Accessor.entitySelectorUsesSelector[this] as Boolean?
+            }.onFailure {
+                CommandRangeChecker.instance.logger.warning("EntitySelector.usesSelectorの取得に失敗")
             }.getOrNull()
         }
 }

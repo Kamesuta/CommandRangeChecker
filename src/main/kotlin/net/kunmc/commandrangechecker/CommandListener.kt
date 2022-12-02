@@ -74,9 +74,17 @@ class CommandListener : Listener {
                 current = current.child
             }
         }.flatMap { it.arguments.values }.mapNotNull {
+            // エンティティセレクターを取り出す
             val result = it.result as? EntitySelector ?: return@mapNotNull null
+            // エンティティセレクターをパース
             ParsedEntitySelector(result, it.range.get(commandBody))
-        }.filter { it.includeEntities }.toList()
+        }.filter {
+            // セレクタ(@eや@r,@aなど)を使用している
+            it.usesSelector ?: false
+        }.filter {
+            // エンティティを含む
+            it.includeEntities
+        }.toList()
 
         // ログの可変部分
         val actionNameMessage = if (isCommandBlockSet) Config.blockSetCommand else Config.blockExecute
