@@ -11,6 +11,9 @@ import kotlin.math.max
  * EntitySelectorから距離など必要な情報を取得するクラス
  */
 class ParsedEntitySelector(val selector: EntitySelector, val selectorCommand: String) {
+    /** エンティティのみか */
+    val includeEntities = selector.b()
+
     /** ワールドが指定されているか。(通常、範囲が指定されている場合trueになる) */
     val worldLimited = selector.d()
 

@@ -76,7 +76,7 @@ class CommandListener : Listener {
         }.flatMap { it.arguments.values }.mapNotNull {
             val result = it.result as? EntitySelector ?: return@mapNotNull null
             ParsedEntitySelector(result, it.range.get(commandBody))
-        }.toList()
+        }.filter { it.includeEntities }.toList()
 
         // ログの可変部分
         val actionNameMessage = if (isCommandBlockSet) Config.blockSetCommand else Config.blockExecute

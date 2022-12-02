@@ -40,8 +40,10 @@ repositories {
     // Paperの依存リポジトリ
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://oss.sonatype.org/content/groups/public/")
-    // ProtocolLibの依存リポジトリ (Spigot NMSの依存リポジトリ)
+    // ProtocolLibの依存リポジトリ
     maven("https://repo.dmulloy2.net/repository/public/")
+    // Spigot NMSの依存リポジトリ
+    mavenLocal()
 }
 
 dependencies {
