@@ -24,6 +24,9 @@ class ParsedEntitySelector(val selector: EntitySelector, val selectorCommand: St
     /** セレクターを使用しているか */
     val usesSelector = selector.usesSelector
 
+    /** `@s`かどうか */
+    val currentEntity = selector.c()
+
     /** AABBによる範囲制限 */
     val aabb: AxisAlignedBB? = selector.aabb
 
