@@ -10,8 +10,11 @@ import io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent
 import net.minecraft.server.v1_16_R3.CommandListenerWrapper
 import net.minecraft.server.v1_16_R3.EntitySelector
 import net.minecraft.server.v1_16_R3.MinecraftServer
+import org.bukkit.block.Block
 import org.bukkit.command.CommandSender
+import org.bukkit.craftbukkit.v1_16_R3.command.CraftBlockCommandSender
 import org.bukkit.craftbukkit.v1_16_R3.command.VanillaCommandWrapper
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
@@ -45,6 +48,9 @@ class CommandListener : Listener {
         })
     }
 
+    /** コマンドブロックの座標とコマンドを保持 */
+    private val commandBlockCache = mutableMapOf<Block, String>()
+
     /**
      * コマンド実行時のチェック
      * @param sender コマンド実行者
@@ -54,9 +60,14 @@ class CommandListener : Listener {
      */
     private fun onCommand(sender: CommandSender, command: String, isCommandBlockSet: Boolean = false): Boolean {
         // 除外リスト
-        if (Config.bypass.contains(sender.name)) {
+        if (sender is CraftPlayer && Config.bypass.contains(sender.name)) {
             return false
         }
+
+        // コマンドブロックの場合、以前に実行されたコマンドでないかチェックする → 現在のコマンドを記憶する
+        val commandBlockFirstExecute = !isCommandBlockSet
+                && sender is CraftBlockCommandSender
+                && commandBlockCache.put(sender.block, command) != command
 
         // 先頭の/を削除
         val commandBody = command.removePrefix("/")
@@ -95,7 +106,7 @@ class CommandListener : Listener {
         if (noRangeSelector != null) {
             // 範囲指定がない場合
             sender.sendMessage(Config.prefix + String.format(Config.noRange, actionNameMessage))
-            CommandRangeChecker.instance.logger.warning("${sender.name} が範囲指定なしの@eを${actionNameLog}しました: ${noRangeSelector.selectorCommand} (場所: ${commandWrapper.position}, コマンド拒否: true)")
+            if (commandBlockFirstExecute) CommandRangeChecker.instance.logger.warning("${sender.name} が範囲指定なしの@eを${actionNameLog}しました: ${noRangeSelector.selectorCommand} (場所: ${commandWrapper.position}, コマンド拒否: true)")
             return true
         }
 
@@ -110,7 +121,7 @@ class CommandListener : Listener {
                     Config.maxDistance
                 )
             )
-            CommandRangeChecker.instance.logger.warning("${sender.name} が距離範囲指定が${Config.maxDistance}ブロックを超える@eを${actionNameLog}しました: ${largeDistanceSelector.selectorCommand} (場所: ${commandWrapper.position}, コマンド拒否: ${Config.forceRangeLimit})")
+            if (commandBlockFirstExecute) CommandRangeChecker.instance.logger.warning("${sender.name} が距離範囲指定が${Config.maxDistance}ブロックを超える@eを${actionNameLog}しました: ${largeDistanceSelector.selectorCommand} (場所: ${commandWrapper.position}, コマンド拒否: ${Config.forceRangeLimit})")
             return Config.forceRangeLimit
         }
 
@@ -125,7 +136,7 @@ class CommandListener : Listener {
                     Config.maxLength
                 )
             )
-            CommandRangeChecker.instance.logger.warning("${sender.name} が矩形範囲指定が${Config.maxLength}ブロックを超える@eを${actionNameLog}しました: ${largeLengthSelector.selectorCommand} (場所: ${commandWrapper.position}, コマンド拒否: ${Config.forceRangeLimit})")
+            if (commandBlockFirstExecute) CommandRangeChecker.instance.logger.warning("${sender.name} が矩形範囲指定が${Config.maxLength}ブロックを超える@eを${actionNameLog}しました: ${largeLengthSelector.selectorCommand} (場所: ${commandWrapper.position}, コマンド拒否: ${Config.forceRangeLimit})")
             return Config.forceRangeLimit
         }
 
