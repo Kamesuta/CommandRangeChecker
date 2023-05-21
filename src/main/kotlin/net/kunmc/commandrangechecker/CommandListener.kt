@@ -42,7 +42,9 @@ class CommandListener : Listener {
                 val command = packet.strings.read(0)
                 // チェック
                 if (onCommand(event.player, command, isCommandBlockSet = true)) {
-                    event.isCancelled = true
+                    // コマンドをサニタイズする
+                    packet.strings.write(0, "!$command")
+                    //event.isCancelled = true
                 }
             }
         })
@@ -102,7 +104,8 @@ class CommandListener : Listener {
         val actionNameLog = if (isCommandBlockSet) "コマンドブロックに設定しようと" else "使用"
 
         // 範囲指定がないセレクターを検出
-        val noRangeSelector = selectors.find { !it.currentEntity && (!it.worldLimited || (it.maxDistance == null && it.maxLength == null)) }
+        val noRangeSelector =
+            selectors.find { !it.currentEntity && (!it.worldLimited || (it.maxDistance == null && it.maxLength == null)) }
         if (noRangeSelector != null) {
             // 範囲指定がない場合
             sender.sendMessage(Config.prefix + String.format(Config.noRange, actionNameMessage))
