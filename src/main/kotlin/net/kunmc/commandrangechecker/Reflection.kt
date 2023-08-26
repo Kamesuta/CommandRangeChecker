@@ -1,8 +1,8 @@
 package net.kunmc.commandrangechecker
 
-import net.minecraft.server.v1_16_R3.AxisAlignedBB
-import net.minecraft.server.v1_16_R3.CriterionConditionValue
-import net.minecraft.server.v1_16_R3.EntitySelector
+import net.minecraft.advancements.critereon.CriterionConditionValue
+import net.minecraft.commands.arguments.selector.EntitySelector
+import net.minecraft.world.phys.AxisAlignedBB
 import java.lang.reflect.Field
 
 /**
@@ -15,10 +15,10 @@ object Reflection {
      */
     private object Accessor {
         // NMS関数/フィールド
-        val entitySelectorRange: Field = EntitySelector::class.java.getDeclaredField("e").apply { isAccessible = true }
-        val entitySelectorAABB: Field = EntitySelector::class.java.getDeclaredField("g").apply { isAccessible = true }
+        val entitySelectorRange: Field = EntitySelector::class.java.getDeclaredField("h").apply { isAccessible = true }
+        val entitySelectorAABB: Field = EntitySelector::class.java.getDeclaredField("j").apply { isAccessible = true }
         val entitySelectorUsesSelector: Field =
-            EntitySelector::class.java.getDeclaredField("checkPermissions").apply { isAccessible = true }
+            EntitySelector::class.java.getDeclaredField("p").apply { isAccessible = true }
     }
 
     /**
@@ -41,10 +41,10 @@ object Reflection {
      * @receiver EntitySelector
      * @return Range
      */
-    val EntitySelector.range: CriterionConditionValue.FloatRange?
+    val EntitySelector.range: CriterionConditionValue.DoubleRange?
         get() {
             return runCatching {
-                Accessor.entitySelectorRange[this] as CriterionConditionValue.FloatRange?
+                Accessor.entitySelectorRange[this] as CriterionConditionValue.DoubleRange?
             }.onFailure {
                 CommandRangeChecker.instance.logger.warning("EntitySelector.rangeの取得に失敗")
             }.getOrNull()

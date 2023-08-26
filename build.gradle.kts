@@ -1,4 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.ajoberstar.grgit.Grgit
 
 plugins {
@@ -7,9 +6,14 @@ plugins {
     // Kotlinを使用するためのプラグイン
     kotlin("jvm") version "1.7.10"
     // ShadowJar(依存関係埋め込み)を使用するためのプラグイン
-    id("com.github.johnrengelman.shadow") version "6.0.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
     // Gitに応じた自動バージョニングを行うためのプラグイン
     id("org.ajoberstar.grgit") version "4.1.1"
+}
+
+// Java17を使用する
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
 }
 
 // グループ定義
@@ -48,11 +52,11 @@ repositories {
 
 dependencies {
     // PaperAPI
-    compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
     // ProtocolLib
     compileOnly("com.comphenix.protocol:ProtocolLib:4.6.0")
     // Spigot NMS
-    compileOnly("org.spigotmc:spigot:1.16.5-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot:1.20.1-R0.1-SNAPSHOT")
 }
 
 tasks {
@@ -61,18 +65,14 @@ tasks {
         archiveClassifier.set("original")
     }
 
-    // 依存関係をcom.yourgroup.lib以下に埋め込むためにリロケートする
-    val relocateShadow by registering(com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation::class) {
-        target = shadowJar.get()
-        prefix = "${project.group}.${project.name.toLowerCase()}.lib"
-    }
-
     // fatJarを生成する
     shadowJar {
-        // リロケートする
-        dependsOn(relocateShadow)
         // 依存関係を埋め込んだjarは末尾なし
         archiveClassifier.set("")
+        // 依存関係をcom.yourgroup.lib以下に埋め込むためにリロケートする
+        arrayOf("kotlin", "org.intellij", "org.jetbrains").forEach {
+            relocate(it, "${project.group}.${project.name.lowercase()}.lib.${it}")
+        }
     }
 
     // ソースjarを生成する

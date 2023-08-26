@@ -8,7 +8,7 @@ object Config {
     val maxLength = CommandRangeChecker.instance.config.getDouble("max_length")
     val forceRangeLimit = CommandRangeChecker.instance.config.getBoolean("force_range_limit")
 
-    val bypass = CommandRangeChecker.instance.config.getStringList("bypass")
+    val bypass: MutableList<String> = CommandRangeChecker.instance.config.getStringList("bypass")
 
     val prefix: String = getString("lang.prefix")
     val blockExecute: String = getString("lang.block_execute")

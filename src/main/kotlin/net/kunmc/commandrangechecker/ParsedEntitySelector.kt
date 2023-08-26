@@ -3,9 +3,9 @@ package net.kunmc.commandrangechecker
 import net.kunmc.commandrangechecker.Reflection.aabb
 import net.kunmc.commandrangechecker.Reflection.range
 import net.kunmc.commandrangechecker.Reflection.usesSelector
-import net.minecraft.server.v1_16_R3.AxisAlignedBB
-import net.minecraft.server.v1_16_R3.CriterionConditionValue
-import net.minecraft.server.v1_16_R3.EntitySelector
+import net.minecraft.advancements.critereon.CriterionConditionValue
+import net.minecraft.commands.arguments.selector.EntitySelector
+import net.minecraft.world.phys.AxisAlignedBB
 import kotlin.math.max
 
 /**
@@ -19,7 +19,7 @@ class ParsedEntitySelector(val selector: EntitySelector, val selectorCommand: St
     val worldLimited = selector.d()
 
     /** 距離に応じた範囲制限 */
-    val range: CriterionConditionValue.FloatRange? = selector.range
+    val range: CriterionConditionValue.DoubleRange? = selector.range
 
     /** セレクターを使用しているか */
     val usesSelector = selector.usesSelector
@@ -35,9 +35,9 @@ class ParsedEntitySelector(val selector: EntitySelector, val selectorCommand: St
 
     /** AABBの最大辺 */
     val maxLength = aabb?.let {
-        val xLength = it.maxX - it.minX
-        val yLength = it.maxY - it.minY
-        val zLength = it.maxZ - it.minZ
+        val xLength = it.d - it.a
+        val yLength = it.e - it.b
+        val zLength = it.f - it.c
         max(max(xLength, yLength), zLength).toFloat()
     }
 }

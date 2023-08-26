@@ -35,7 +35,7 @@ class CommandRangeChecker : JavaPlugin() {
                 e
             )
             // 読み込みに失敗したためプラグインを無効にする
-            pluginLoader.disablePlugin(instance)
+            server.pluginManager.disablePlugin(instance)
             return
         }
     }
